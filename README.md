@@ -1,4 +1,5 @@
 **Cal's Quest: The dark chronicles**
+
 Cal's Quest: The dark chronicles is a fun, animated, browser-based game where you defeat monsters by solving math problems and casting magical spells!
 Fight your way through dungeons, face skeletons, chompers, and golems, and master math to unleash fireballs, thunderstrikes, and the mighty icenova spell.
 
@@ -30,11 +31,7 @@ Edit math difficulty: Adjust math problem generation for more or less challenge.
 Tweak spell effects: Change clip-path/animation in the CSS for your own unique spell look.
 Adjust spell launch: Update the X/Y offsets in createAndLaunchProjectile to perfectly match your MC sprite.
 
-📷 Screenshots
-<img src="screenshot1.png" width="480"> <img src="screenshot2.png" width="480">
-
-Game design & coding: ARTUTUTURA
-
+Game design & coding: ARTUTUTURA (Chayapol Nimvoharn)
 Powered by vanilla JS, HTML5, and CSS3.
 
 📜 License
