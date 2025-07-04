@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Math Battle Game</title>
+    <style>
+        @font-face {
+            font-family: 'Ithaca';
+            src: url('Ithaca.ttf') format('truetype');
+            font-display: swap;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Ithaca', sans-serif;
+            overflow: hidden;
+            user-select: none;
+            background: #1a1a2e;
+        }
+        #gameContainer {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            background: linear-gradient(180deg, #2c1810 0%, #1a0f08 100%);
+            background-image: url('corridor-state-1.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            transition: background-image 1.1s, opacity 1s cubic-bezier(.72,0,.37,1);
+        }
+        #player {
+            position: absolute;
+            left: 60px;
+            bottom: 195px;
+            width: 420px;
+            height: 520px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center bottom;
+            transition: all 0.5s ease;
+            z-index: 10;
+        }
+        #player.casting {
+            transform: scale(1.1) translateX(10px);
+        }
+        #player.moving-right {
+            animation: moveRight 1.5s ease-out forwards;
+        }
+        @keyframes moveRight {
+            0% { transform: translateX(0); }
+            50% { transform: translateX(400px); }
+            100% { transform: translateX(1200px); }
+        }
+        #player.hurt {
+            animation: playerHurt 0.8s ease-out;
+        }
+        @keyframes playerHurt {
+            0% { transform: translateX(0) scale(1); }
+            25% { transform: translateX(-20px) scale(1.05); }
+            50% { transform: translateX(10px) scale(0.95); }
+            75% { transform: translateX(-10px) scale(1.02); }
+            100% { transform: translateX(0) scale(1); }
+        }
+        #enemy {
+            position: absolute;
+            right: 90px;
+            bottom: 210px;
+            width: 420px;
+            height: 520px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center bottom;
+            z-index: 10;
+        }
+        #enemy.defeated {
+            animation: skeletonDeath 1s ease-out forwards;
+        }
+        #enemy.defeated-fade {
+            animation: fadeOutDeath 1.5s ease-out forwards;
+        }
+        #enemy.spawning {
+            opacity: 0;
+            transition: opacity 0.5s ease-out;
+        }
+        @keyframes skeletonDeath {
+            0% { transform: scale(1) rotate(0deg); opacity: 1;}
+            50% { transform: scale(0.5) rotate(45deg); opacity: 0.7;}
+            100% { transform: scale(0) rotate(90deg); opacity: 0;}
+        }
+        @keyframes fadeOutDeath {
+            0% { opacity: 1; filter: brightness(1);}
+            50% { opacity: 0.7; filter: brightness(1.5) saturate(0.5);}
+            100% { opacity: 0; filter: brightness(2) saturate(0);}
+        }
+        #mathProblem {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+            text-align: center;
+            border: 4px solid #ff6b35;
+            z-index: 20;
+            transition: opacity 0.3s ease;
+        }
+        #equationContainer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            font-size: 54px;
+            font-weight: bold;
+            color: #2c3e50;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        #equation {
+            font-size: 54px;
+            font-weight: bold;
+            color: #2c3e50;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            font-family: 'Ithaca';
+        }
+        #answerInput {
+            font-size: 54px;
+            padding: 10px 15px;
+            border: 4px solid #3498db;
+            border-radius: 12px;
+            text-align: center;
+            width: 120px;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+            font-weight: bold;
+            color: #2c3e50;
+            font-family: 'Ithaca';
+        }
+        #submitBtn {
+            font-size: 30px;
+            padding: 15px 30px;
+            background: linear-gradient(45deg, #ff6b35, #f7931e);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            margin-left: 15px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+            font-family: 'Ithaca';
+        }
+        #score {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            background: linear-gradient(45deg, #34495e, #2c3e50);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            font-size: 20px;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            border: 2px solid #ecf0f1;
+        }
+        #healthBar {
+            position: absolute;
+            top: 100px;
+            left: 30px;
+            background: rgba(52, 73, 94, 0.9);
+            padding: 15px 20px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: 2px solid #ecf0f1;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        #musicToggle {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: rgba(52, 73, 94, 0.9);
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            border-radius: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            border: 2px solid #ecf0f1;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            z-index: 25;
+        }
+        .heart {
+            width: 40px;
+            height: 40px;
+            background-image: url('red_heart.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            transition: all 0.3s ease;
+        }
+        .heart.lost {
+            background-image: url('grey_heart.png');
+            opacity: 1;
+        }
+        #feedback {
+            position: absolute;
+            top: 100px;
+            right: 30px;
+            padding: 20px;
+            border-radius: 15px;
+            font-size: 30px;
+            font-weight: bold;
+            min-width: 180px;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            z-index: 25;
+            font-family: 'Ithaca';
+        }
+        .correct {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            color: white;
+        }
+        .incorrect {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
+        }
+        .projectile {
+            position: absolute;
+            width: 240px;
+            height: 240px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            z-index: 15;
+            pointer-events: none;
+        }
+        .projectile.fireball, .projectile.thunderstrike {
+            width: 480px;
+            height: 480px;
+        }
+        .projectile.fireball {
+            filter: drop-shadow(0 0 30px #ff6b35) drop-shadow(0 0 60px #ff4757);
+        }
+        .projectile.thunderstrike {
+            filter: drop-shadow(0 0 30px #3498db) drop-shadow(0 0 60px #9b59b6);
+        }
+        .icenova {
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            z-index: 20;
+            filter: drop-shadow(0 0 40px #40c6ff) drop-shadow(0 0 90px #5cf2f2);
+            pointer-events: none;
+            opacity: 1;
+            clip-path: inset(0 100% 0 0);
+            animation: icenova-wipe-in 2s forwards;
+        }
+        @keyframes icenova-wipe-in {
+            from { clip-path: inset(0 100% 0 0); opacity: 0; }
+            to   { clip-path: inset(0 0% 0 0); opacity: 1; }
+        }
+        @keyframes icenova-wipe-out {
+        from { clip-path: inset(0 0 0 0); opacity: 1; }
+        to   { clip-path: inset(0 0 0 100%); opacity: 0; }
+        }
+        @keyframes hit {
+            0%, 100% { transform: translateX(0) scale(1); }
+            25% { transform: translateX(-15px) scale(0.95); }
+            75% { transform: translateX(15px) scale(1.05); }
+        }
+        .shake { animation: hit 0.6s ease-in-out; }
+        #gameOver {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            z-index: 50;
+            display: none;
+            border: 3px solid #e74c3c;
+        }
+        #gameOver h2 {
+            color: #e74c3c;
+            margin-bottom: 20px;
+            font-size: 32px;
+        }
+        #wrongSpellPopup,
+        #correctSpellPopup {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            z-index: 40;
+            display: none;
+            border: 4px solid #e74c3c;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+            max-width: 450px;
+        }
+        #correctSpellPopup { border: 4px solid #27ae60; }
+        #wrongSpellPopup h3, #correctSpellPopup h3 {
+            font-size: 28px;
+            margin-bottom: 20px;
+        }
+        #restartBtn {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s;
+        }
+        #restartBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4);
+        }
+        #player.fallback, #enemy.fallback {
+            background: linear-gradient(45deg, #e74c3c, #c0392b) !important;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 72px;
+            font-family: 'Ithaca';
+        }
+        #player.fallback::after { content: "🧙‍♂️ HERO"; }
+        #enemy.fallback::after { content: "💀 ENEMY"; }
+        #enemy.fallback.skeleton::after { content: "💀 SKELETON"; }
+        #enemy.fallback.bigchomp::after { content: "👹 BIG CHOMP"; }
+        #enemy.fallback.golem::after { content: "🗿 GOLEM"; }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="player"></div>
+        <div id="enemy"></div>
+        <audio id="bgMusic" loop>
+            <source src="bg_battle.mp3" type="audio/mpeg">
+        </audio>
+        <audio id="skeletonDeathSound">
+            <source src="skeleton_disappear.wav" type="audio/wav">
+        </audio>
+        <audio id="mcAttackSound">
+            <source src="mc_attack.wav" type="audio/wav">
+        </audio>
+        <audio id="mcHitSound">
+            <source src="mc_hit.wav" type="audio/wav">
+        </audio>
+        <audio id="icenovaSound">
+            <source src="icenova_effect.wav" type="audio/wav">
+        </audio>
+        <div id="mathProblem">
+            <div id="equationContainer">
+                <span id="equation"></span>
+                <input type="number" id="answerInput" placeholder="">
+            </div>
+            <button id="submitBtn">Cast Spell!</button>
+        </div>
+        <div id="score">Score: <span id="scoreValue">0</span></div>
+        <button id="musicToggle">🎵 Music: ON</button>
+        <div id="healthBar">
+            <div class="heart" id="heart1"></div>
+            <div class="heart" id="heart2"></div>
+            <div class="heart" id="heart3"></div>
+        </div>
+        <div id="feedback"></div>
+        <div id="wrongSpellPopup">
+            <h3>❌ Spell Failed!</h3>
+            <p>You cast the spell incorrectly, nothing happened!</p>
+            <p>The <span id="enemyName">enemy</span> prepares to attack...</p>
+        </div>
+        <div id="correctSpellPopup">
+            <h3>✅ Spell Complete!</h3>
+            <p>You cast the <span id="spellName">spell</span> perfectly!</p>
+            <p>The <span id="spellDescription">spell</span> flies toward the <span id="targetName">enemy</span>...</p>
+        </div>
+        <div id="gameOver">
+            <h2>💀 Game Over! 💀</h2>
+            <p>You were defeated!</p>
+            <p>You defeated <span id="finalScore">0</span> enemies!</p>
+            <button id="restartBtn">Back to Home</button>
+        </div>
+    </div>
+    <script>
+        const ENEMY_ATTACK_BOTTOM_OFFSET = 40;
+        class MathBattleGame {
+            constructor() {
+                this.score = 0;
+                this.health = 3;
+                this.currentProblem = {};
+                this.enemiesKilled = 0;
+                this.isMoving = false;
+                this.isAttacking = false;
+                this.currentAttackTimeout = null;
+                this.currentSection = 1;
+                this.currentEnemyType = 'skeleton';
+                this.eventListenersAttached = false;
+                this.initializeElements();
+                this.loadImages();
+                this.updateHealthDisplay();
+                this.spawnRandomEnemy();
+                this.generateNewProblem();
+                this.setupEventListeners();
+                this.initializeMusic();
+            }
+            initializeElements() {
+                this.equationEl = document.getElementById('equation');
+                this.answerInput = document.getElementById('answerInput');
+                this.submitBtn = document.getElementById('submitBtn');
+                this.scoreEl = document.getElementById('scoreValue');
+                this.feedbackEl = document.getElementById('feedback');
+                this.playerEl = document.getElementById('player');
+                this.enemyEl = document.getElementById('enemy');
+                this.bgMusic = document.getElementById('bgMusic');
+                this.musicToggle = document.getElementById('musicToggle');
+                this.skeletonDeathSound = document.getElementById('skeletonDeathSound');
+                this.mcAttackSound = document.getElementById('mcAttackSound');
+                this.mcHitSound = document.getElementById('mcHitSound');
+                this.icenovaSound = document.getElementById('icenovaSound');
+                this.gameContainer = document.getElementById('gameContainer');
+            }
+            loadImages() {
+                const testPlayerImg = new Image();
+                testPlayerImg.onload = () => {
+                    this.playerEl.style.backgroundImage = 'url(idle_mc.gif)';
+                    this.playerEl.classList.remove('fallback');
+                };
+                testPlayerImg.onerror = () => {
+                    this.playerEl.classList.add('fallback');
+                };
+                this.playerEl.classList.add('fallback');
+                testPlayerImg.src = 'idle_mc.gif';
+                this.playerIdleImage = 'idle_mc.gif';
+                this.gameContainer.style.backgroundImage = "url('corridor-state-1.png')";
+                for (let i = 1; i <= 4; i++) {
+                    const bgImg = new Image();
+                    bgImg.src = `corridor-state-${i}.png`;
+                }
+                this.playerCastingImage = 'attack_mc.gif';
+                this.fireballImage = 'fireball.gif';
+                this.thunderstrikeImage = 'thunderstrike.gif';
+                this.skeletonIdleImage = 'idle_skeleton.gif';
+                this.skeletonAttackImage = 'attack_skeleton.gif';
+                this.bigchompIdleImage = 'idle_bigchomp.gif';
+                this.bigchompAttackImage = 'attack_bigchomp.gif';
+                this.golemIdleImage = 'idle_golem.gif';
+                this.golemAttackImage = 'attack_golem.gif';
+            }
+            spawnRandomEnemy() {
+                const enemyTypes = ['skeleton', 'bigchomp', 'golem'];
+                this.currentEnemyType = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
+                this.enemyEl.classList.remove('skeleton', 'bigchomp', 'golem');
+                this.enemyEl.classList.add(this.currentEnemyType);
+                let idleImage;
+                if (this.currentEnemyType === 'skeleton') {
+                    idleImage = this.skeletonIdleImage;
+                } else if (this.currentEnemyType === 'bigchomp') {
+                    idleImage = this.bigchompIdleImage;
+                } else {
+                    idleImage = this.golemIdleImage;
+                }
+                this.enemyEl.style.backgroundImage = `url(${idleImage})`;
+                this.enemyEl.classList.add('fallback', this.currentEnemyType);
+                const testImg = new Image();
+                testImg.onload = () => {
+                    this.enemyEl.classList.remove('fallback');
+                };
+                testImg.src = idleImage;
+            }
+            setupEventListeners() {
+                if (this.eventListenersAttached) return;
+                this.eventListenersAttached = true;
+                this.submitBtn.addEventListener('click', () => this.checkAnswer());
+                this.answerInput.addEventListener('selectstart', (e) => e.preventDefault());
+                this.answerInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.checkAnswer();
+                });
+                this.answerInput.addEventListener('input', (e) => {
+                    e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                });
+                document.getElementById('restartBtn').addEventListener('click', () => {
+                    window.location.href = "index.html";
+                });
+                document.getElementById('musicToggle').addEventListener('click', () => {
+                    this.toggleMusic();
+                });
+                this.answerInput.focus();
+            }
+            initializeMusic() {
+                this.bgMusic.volume = 0.5;
+                this.skeletonDeathSound.volume = 0.4;
+                this.mcAttackSound.volume = 0.3;
+                this.mcHitSound.volume = 0.3;
+                this.icenovaSound.volume = 0.45;
+                this.startMusic();
+                document.addEventListener('click', () => { this.startMusic(); }, { once: true });
+                document.addEventListener('keydown', () => { this.startMusic(); }, { once: true });
+            }
+            startMusic() {
+                try {
+                    if (this.bgMusic && this.bgMusic.paused && this.bgMusic.play) {
+                        this.bgMusic.play();
+                    }
+                } catch (e) {}
+            }
+            toggleMusic() {
+                try {
+                    if (this.bgMusic && this.bgMusic.paused && this.bgMusic.play) {
+                        this.bgMusic.play();
+                        this.musicToggle.textContent = '🎵 Music: ON';
+                    } else if (this.bgMusic && !this.bgMusic.paused) {
+                        this.bgMusic.pause();
+                        this.musicToggle.textContent = '🔇 Music: OFF';
+                    }
+                } catch (e) {}
+            }
+            generateNewProblem() {
+                const isAddition = Math.random() > 0.5;
+                let num1, num2, answer;
+                const difficultyBonus = Math.min(this.enemiesKilled * 2, 10);
+                if (isAddition) {
+                    num1 = Math.floor(Math.random() * (20 + difficultyBonus)) + 1;
+                    num2 = Math.floor(Math.random() * (20 + difficultyBonus)) + 1;
+                    answer = num1 + num2;
+                    this.currentProblem = {
+                        equation: `${num1} + ${num2} = `,
+                        answer: answer
+                    };
+                } else {
+                    num1 = Math.floor(Math.random() * (30 + difficultyBonus)) + 10;
+                    num2 = Math.floor(Math.random() * num1);
+                    answer = num1 - num2;
+                    this.currentProblem = {
+                        equation: `${num1} - ${num2} = `,
+                        answer: answer
+                    };
+                }
+                this.equationEl.textContent = this.currentProblem.equation;
+                this.answerInput.value = '';
+                this.answerInput.focus();
+            }
+            checkAnswer() {
+                if (this.isMoving || this.isAttacking) return;
+                const userAnswer = parseInt(this.answerInput.value);
+                if (isNaN(userAnswer)) {
+                    this.showFeedback('Please enter a number!', 'incorrect');
+                    return;
+                }
+                if (userAnswer === this.currentProblem.answer) {
+                    this.handleCorrectAnswer();
+                } else {
+                    this.handleIncorrectAnswer();
+                }
+            }
+            handleCorrectAnswer() {
+                if (this.isMoving || this.isAttacking) return;
+                this.score += 10;
+                this.scoreEl.textContent = this.score;
+                const spellName = this.currentEnemyType === 'skeleton'
+                    ? 'fireball'
+                    : this.currentEnemyType === 'bigchomp'
+                    ? 'thunderstrike'
+                    : 'icenova';
+                const spellDesc = spellName;
+                const targetName = this.currentEnemyType === 'skeleton'
+                    ? 'skeleton'
+                    : this.currentEnemyType === 'bigchomp'
+                    ? 'big chomp'
+                    : 'golem';
+                document.getElementById('spellName').textContent = spellName;
+                document.getElementById('spellDescription').textContent = spellDesc;
+                document.getElementById('targetName').textContent = targetName;
+                document.getElementById('correctSpellPopup').style.display = 'block';
+                document.getElementById('mathProblem').style.display = 'none';
+                setTimeout(() => {
+                    document.getElementById('correctSpellPopup').style.display = 'none';
+                    this.castSpell();
+                }, 2000);
+            }
+            handleIncorrectAnswer() {
+                if (this.isAttacking || this.isMoving) return;
+                const enemyName = this.currentEnemyType === 'skeleton'
+                    ? 'skeleton'
+                    : this.currentEnemyType === 'bigchomp'
+                    ? 'big chomp'
+                    : 'golem';
+                document.getElementById('enemyName').textContent = enemyName;
+                document.getElementById('mathProblem').style.display = 'none';
+                document.getElementById('wrongSpellPopup').style.display = 'block';
+                setTimeout(() => {
+                    document.getElementById('wrongSpellPopup').style.display = 'none';
+                    document.getElementById('mathProblem').style.display = 'block';
+                    document.getElementById('mathProblem').style.opacity = '1';
+                    this.currentAttackTimeout = setTimeout(() => { this.emergencyReset(); }, 10000);
+                    this.enemyAttack();
+                }, 2000);
+            }
+            emergencyReset() {
+                this.isAttacking = false;
+                this.isMoving = false;
+                document.getElementById('wrongSpellPopup').style.display = 'none';
+                document.getElementById('correctSpellPopup').style.display = 'none';
+                document.getElementById('mathProblem').style.display = 'block';
+                document.getElementById('mathProblem').style.opacity = '1';
+                this.enemyEl.classList.remove('shake', 'defeated', 'defeated-fade', 'spawning');
+                this.enemyEl.style.transform = '';
+                this.enemyEl.style.filter = '';
+                this.enemyEl.style.zIndex = '10';
+                this.enemyEl.style.transition = '';
+                this.enemyEl.style.opacity = '1';
+                const idleImage =
+                    this.currentEnemyType === 'skeleton'
+                        ? this.skeletonIdleImage
+                        : this.currentEnemyType === 'bigchomp'
+                        ? this.bigchompIdleImage
+                        : this.golemIdleImage;
+                this.enemyEl.style.backgroundImage = `url(${idleImage})`;
+                this.enemyEl.classList.remove('fallback');
+                this.playerEl.classList.remove('hurt', 'casting');
+                this.playerEl.style.transform = '';
+                if (this.playerIdleImage) {
+                    this.playerEl.style.backgroundImage = `url(${this.playerIdleImage})`;
+                    this.playerEl.classList.remove('fallback');
+                }
+                if (this.health > 0) {
+                    this.answerInput.value = '';
+                    this.answerInput.focus();
+                }
+                if (this.currentAttackTimeout) {
+                    clearTimeout(this.currentAttackTimeout);
+                    this.currentAttackTimeout = null;
+                }
+            }
+            enemyAttack() {
+                if (this.isAttacking) return;
+                this.isAttacking = true;
+                document.getElementById('mathProblem').style.display = 'none';
+                const attackImage =
+                    this.currentEnemyType === 'skeleton'
+                        ? this.skeletonAttackImage
+                        : this.currentEnemyType === 'bigchomp'
+                        ? this.bigchompAttackImage
+                        : this.golemAttackImage;
+                this.enemyEl.style.backgroundImage = `url(${attackImage})`;
+                this.enemyEl.classList.remove('fallback');
+                this.enemyEl.style.bottom = (195 + ENEMY_ATTACK_BOTTOM_OFFSET) + "px";
+                this.enemyEl.style.transform = 'translateX(-810px)';
+                this.enemyEl.style.filter = 'drop-shadow(0 0 20px red) brightness(1.3)';
+                this.enemyEl.style.zIndex = '25';
+                this.enemyEl.style.transition = 'all 1s ease-out';
+                setTimeout(() => {
+                    this.takeDamage();
+                    this.retreatEnemy();
+                }, 1500);
+            }
+            retreatEnemy() {
+                if (this.currentAttackTimeout) {
+                    clearTimeout(this.currentAttackTimeout);
+                    this.currentAttackTimeout = null;
+                }
+                this.enemyEl.style.transform = '';
+                this.enemyEl.style.filter = '';
+                this.enemyEl.style.zIndex = '10';
+                this.enemyEl.style.transition = 'all 1s ease-out';
+                const idleImage =
+                    this.currentEnemyType === 'skeleton'
+                        ? this.skeletonIdleImage
+                        : this.currentEnemyType === 'bigchomp'
+                        ? this.bigchompIdleImage
+                        : this.golemIdleImage;
+                this.enemyEl.style.backgroundImage = `url(${idleImage})`;
+                this.enemyEl.classList.remove('fallback');
+                this.enemyEl.style.bottom = "195px";
+                setTimeout(() => {
+                    this.isAttacking = false;
+                    document.getElementById('mathProblem').style.display = 'block';
+                    document.getElementById('mathProblem').style.opacity = '1';
+                    if (this.health > 0 && !this.isMoving) {
+                        this.answerInput.value = '';
+                        this.answerInput.focus();
+                    }
+                }, 1000);
+            }
+            takeDamage() {
+                if (this.health <= 0) return;
+                try {
+                    if (this.mcHitSound && this.mcHitSound.play) {
+                        this.mcHitSound.currentTime = 0;
+                        this.mcHitSound.play();
+                    }
+                } catch (e) {}
+                this.health--;
+                this.updateHealthDisplay();
+                this.playerEl.classList.add('hurt');
+                setTimeout(() => {
+                    this.playerEl.classList.remove('hurt');
+                }, 800);
+                if (this.health <= 0) {
+                    this.gameOver();
+                }
+            }
+            updateHealthDisplay() {
+                for (let i = 1; i <= 3; i++) {
+                    const heart = document.getElementById(`heart${i}`);
+                    if (i > this.health) {
+                        heart.classList.add('lost');
+                    } else {
+                        heart.classList.remove('lost');
+                    }
+                }
+            }
+            gameOver() {
+                document.getElementById('mathProblem').style.display = 'none';
+                document.getElementById('finalScore').textContent = this.enemiesKilled;
+                document.getElementById('gameOver').style.display = 'block';
+                this.answerInput.value = '';
+            }
+            castSpell() {
+                const ATTACK_BOTTOM_OFFSET = 40;
+
+                if (this.currentEnemyType === 'golem') {
+                    // Only play icenova sound
+                    this.icenovaSound.currentTime = 0;
+                    this.icenovaSound.play().catch(error => {});
+                } else {
+                    this.mcAttackSound.currentTime = 0;
+                    this.mcAttackSound.play().catch(error => {});
+                }
+                this.playerEl.classList.add('casting');
+                const originalImage = this.playerEl.style.backgroundImage;
+                this.playerEl.style.backgroundImage = `url(${this.playerCastingImage})`;
+                this.playerEl.classList.remove('fallback');
+                this.playerEl.style.bottom = (195 + ATTACK_BOTTOM_OFFSET) + "px";
+                setTimeout(() => {
+                    this.createAndLaunchProjectile(originalImage);
+                    this.playerEl.style.backgroundImage = `url(${this.playerIdleImage})`;
+                    this.playerEl.classList.remove('fallback');
+                    this.playerEl.classList.remove('casting');
+                    this.playerEl.style.bottom = "195px";
+                }, 1000);
+            }
+            createAndLaunchProjectile(originalImage) {
+                if (this.currentEnemyType === 'golem') {
+                    const icenova = document.createElement('div');
+                    icenova.className = 'icenova';
+                    icenova.style.backgroundImage = "url('icenova.png')";
+                    icenova.style.width = "1456px";
+                    icenova.style.height = "546px";
+                    icenova.style.position = "absolute";
+                    // Dynamically position to MC's book
+                    const playerRect = this.playerEl.getBoundingClientRect();
+                    const containerRect = this.gameContainer.getBoundingClientRect();
+                    // Tune these offsets until it looks perfect for your MC sprite:
+                    const bookOffsetX = 280; // pixels from left of player sprite to center of book (adjust for your sprite)
+                    const bookOffsetY = 600; // pixels from bottom of player sprite to center of book (adjust for your sprite)
+                    icenova.style.left = (playerRect.left - containerRect.left + bookOffsetX) + "px";
+                    icenova.style.bottom = (playerRect.bottom - containerRect.top - bookOffsetY) + "px";
+                    this.gameContainer.appendChild(icenova);
+
+                    if (this.icenovaSound && this.icenovaSound.play) {
+                        this.icenovaSound.currentTime = 0;
+                        this.icenovaSound.play();
+                    }
+                    setTimeout(() => {
+                        icenova.style.animation = 'icenova-wipe-out 0.7s forwards';
+                        setTimeout(() => {
+                            icenova.remove();
+                            this.defeatEnemy();
+                        }, 700);
+                    }, 2100);
+                    return;
+                }
+                // === FIREBALL/THUNDERSTRIKE LOGIC ===
+                const projectile = document.createElement('div');
+                projectile.className = 'projectile';
+                const isFireball = this.currentEnemyType === 'skeleton';
+                projectile.classList.add(isFireball ? 'fireball' : 'thunderstrike');
+                const mcRect = this.playerEl.getBoundingClientRect();
+                const enemyRect = this.enemyEl.getBoundingClientRect();
+                const containerRect = document.getElementById('gameContainer').getBoundingClientRect();
+                const projectileHalfSize = 240;
+                const handYOffset = 160;
+                const startX = mcRect.left - containerRect.left + (mcRect.width / 2) - projectileHalfSize + 10;
+                const startY = handYOffset;
+                const targetYOffset = 130;
+                const endX = enemyRect.left - containerRect.left + (enemyRect.width / 2) - projectileHalfSize;
+                const endY = targetYOffset;
+                projectile.style.left = startX + 'px';
+                projectile.style.bottom = startY + 'px';
+                const projectileImage = isFireball ? this.fireballImage : this.thunderstrikeImage;
+                if (projectileImage) {
+                    projectile.style.backgroundImage = `url(${projectileImage})`;
+                }
+                document.getElementById('gameContainer').appendChild(projectile);
+                projectile.style.transition = 'all 1s ease-out';
+                projectile.style.transform = 'scale(0.8)';
+                setTimeout(() => {
+                    if (this.playerIdleImage) {
+                        this.playerEl.style.backgroundImage = `url(${this.playerIdleImage})`;
+                        this.playerEl.classList.remove('fallback');
+                    } else {
+                        this.playerEl.style.backgroundImage = originalImage;
+                    }
+                    this.playerEl.classList.remove('casting');
+                }, 200);
+                setTimeout(() => {
+                    projectile.style.left = endX + 'px';
+                    projectile.style.bottom = endY + 'px';
+                    projectile.style.transform = 'scale(1.3)';
+                    if (isFireball) {
+                        projectile.style.filter = 'drop-shadow(0 0 40px #ff6b35) drop-shadow(0 0 80px #ff4757)';
+                    } else {
+                        projectile.style.filter = 'drop-shadow(0 0 40px #3498db) drop-shadow(0 0 80px #9b59b6)';
+                    }
+                }, 200);
+                setTimeout(() => {
+                    projectile.remove();
+                    this.defeatEnemy();
+                }, 1200);
+            }
+            defeatEnemy() {
+                this.skeletonDeathSound.currentTime = 0;
+                this.skeletonDeathSound.play().catch(error => {});
+                this.enemyEl.classList.add('shake');
+                setTimeout(() => {
+                    this.enemyEl.classList.remove('shake');
+                    if (this.currentEnemyType === 'skeleton') {
+                        this.enemyEl.classList.add('defeated');
+                    } else if (this.currentEnemyType === 'bigchomp') {
+                        this.enemyEl.classList.add('defeated-fade');
+                    } else {
+                        this.enemyEl.classList.add('defeated-fade');
+                    }
+                    this.enemiesKilled++;
+                    this.moveToNextArea();
+                }, 600);
+            }
+            moveToNextArea() {
+                this.isMoving = true;
+                document.getElementById('mathProblem').style.display = 'none';
+                this.enemyEl.classList.add('spawning');
+                this.playerEl.classList.add('moving-right');
+                setTimeout(() => {
+                    this.gameContainer.style.transition = 'background-image 1.1s, opacity 1s cubic-bezier(.72,0,.37,1)';
+                    this.gameContainer.style.opacity = '0';
+                    setTimeout(() => {
+                        this.currentSection = (this.currentSection % 4) + 1;
+                        this.gameContainer.style.backgroundImage = `url('corridor-state-${this.currentSection}.png')`;
+                        this.gameContainer.style.opacity = '1';
+                        this.playerEl.classList.remove('moving-right');
+                        this.playerEl.style.transform = '';
+                        this.spawnNewEnemy();
+                    }, 1000);
+                }, 1500);
+            }
+            spawnNewEnemy() {
+                this.enemyEl.classList.remove('defeated', 'defeated-fade', 'spawning', 'skeleton', 'bigchomp', 'golem');
+                this.enemyEl.style.transform = '';
+                this.enemyEl.style.transition = '';
+                this.spawnRandomEnemy();
+                this.enemyEl.style.transform = 'scale(0) rotate(180deg)';
+                this.enemyEl.style.opacity = '0';
+                setTimeout(() => {
+                    this.enemyEl.style.transition = 'all 0.5s ease-out';
+                    this.enemyEl.style.transform = 'scale(1) rotate(0deg)';
+                    this.enemyEl.style.opacity = '1';
+                    this.enemyEl.classList.remove('fallback');
+                    document.getElementById('mathProblem').style.display = 'block';
+                    document.getElementById('mathProblem').style.opacity = '1';
+                    this.isMoving = false;
+                    this.generateNewProblem();
+                }, 300);
+            }   
+            showFeedback(message, type) {
+                this.feedbackEl.textContent = message;
+                this.feedbackEl.className = type;
+                this.feedbackEl.style.opacity = '1';
+                setTimeout(() => {
+                    this.feedbackEl.style.opacity = '0';
+                }, 2000);
+            }
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            new MathBattleGame();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+        body {
+            width: 100vw;
+            height: 100vh;
+        }
+        #menuBg {
+            position: absolute;
+            width: 100vw;
+            height: 100vh;
+            top: 0; left: 0;
+            object-fit: cover;
+            z-index: 1;
+            background: #000;
+        }
+    </style>
+</head>
+<body>
+    <video id="menuBg" autoplay loop muted playsinline>
+        <source src="menu_main.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+    <script>
+        document.body.addEventListener('click', function() {
+            window.location.href = 'game.html';
+        });
+        document.body.addEventListener('keydown', function() {
+            window.location.href = 'game.html';
+        });
+    </script>
+</body>
+</html>
